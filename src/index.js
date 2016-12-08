@@ -1,4 +1,5 @@
 const lodash = require('lodash')
+import { getBoundpropertyDescriptor } from 'bind-property-descriptor'
 import { start as createRepl } from 'repl'
 
 export default (vars, {
@@ -8,7 +9,15 @@ export default (vars, {
 } = {}) => {
   const repl = createRepl({ ignoreUndefined, prompt })
 
-  lodash.assign(repl.context, vars, lodash.omit(lodash, '_'))
+  const { context } = repl
+  vars && lodash.forEach(Object.getOwnPropertyNames(vars), name => {
+    Object.defineProperty(context, name, getBoundpropertyDescriptor(vars, name))
+  })
+  lodash.forEach(lodash, (fn, name) => {
+    if (name !== '_') {
+      context[name] = fn
+    }
+  })
 
   if (waitForPromises) {
     // Make the REPL waits for promise completion.
